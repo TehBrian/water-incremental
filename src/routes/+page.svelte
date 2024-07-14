@@ -1,4 +1,77 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
+	type Save = {
+		hasBoughtBottle: boolean;
+		hasFilledBottle: boolean;
+		hasSoldBottle: boolean;
+		money: number;
+		emptyBottles: number;
+		filledBottles: number;
+		soldBottles: number;
+		brandName: string | null;
+	};
+
+	function exportSave(): Save {
+		return {
+			hasBoughtBottle: hasBoughtBottle,
+			hasFilledBottle: hasFilledBottle,
+			hasSoldBottle: hasSoldBottle,
+			money: money,
+			emptyBottles: emptyBottles,
+			filledBottles: filledBottles,
+			soldBottles: soldBottles,
+			brandName: brandName
+		} satisfies Save;
+	}
+
+	function importSave(save: Save) {
+		hasFilledBottle = save.hasFilledBottle;
+		hasBoughtBottle = save.hasBoughtBottle;
+		hasSoldBottle = save.hasSoldBottle;
+		money = save.money;
+		emptyBottles = save.emptyBottles;
+		filledBottles = save.filledBottles;
+		soldBottles = save.soldBottles;
+		brandName = save.brandName;
+	}
+
+	function emptySave() {
+		return {
+			hasBoughtBottle: false,
+			hasFilledBottle: false,
+			hasSoldBottle: false,
+			money: 5,
+			emptyBottles: 0,
+			filledBottles: 0,
+			soldBottles: 0,
+			brandName: null
+		} satisfies Save;
+	}
+
+	const itemKey = 'water-incremental-save';
+
+	function writeSave(): void {
+		localStorage.setItem(itemKey, JSON.stringify(exportSave()));
+		console.log('Wrote save to local storage.');
+	}
+
+	function readSave(): void {
+		const item = localStorage.getItem(itemKey);
+		if (item !== null) {
+			importSave(JSON.parse(item));
+			console.log('Read save from local storage.');
+		} else {
+			importSave(emptySave());
+			console.log('Found no save in local storage.');
+		}
+	}
+
+	onMount(async () => {
+		readSave();
+		setInterval(() => writeSave(), 1000);
+	});
+
 	let hasBoughtBottle = $state(false);
 	let hasFilledBottle = $state(false);
 	let hasSoldBottle = $state(false);
@@ -14,22 +87,17 @@
 	let wantFriend = $derived(soldBottles >= 300);
 	let wantRobot = $derived(soldBottles >= 400);
 	let cityUpset = $derived(soldBottles >= 500);
+	let canFillBottle = $derived(emptyBottles < 1 || (momDividends && money < 0.1));
 
-	let brandName: string | undefined = $state(undefined);
-	let brandNameInput: HTMLInputElement | undefined = $state(undefined);
+	let brandName: string | null = $state(null);
+	let brandNameInput: HTMLInputElement | null = $state(null);
 
-	function sIf1(value: number) {
-		return value == 1 ? '' : 's';
+	function if1(count: number, singular: string, plural: string) {
+		return count == 1 ? singular : plural;
 	}
 
-	function canFillBottle() {
-		if (emptyBottles < 1) {
-			return true;
-		}
-		if (momDividends && money < 0.1) {
-			return true;
-		}
-		return false;
+	function sIf1(count: number) {
+		return if1(count, '', 's');
 	}
 </script>
 
@@ -92,7 +160,7 @@
 {#if hasBoughtBottle}
 	<p>You have {emptyBottles} empty bottle{sIf1(emptyBottles)}.</p>
 	<button
-		disabled={canFillBottle()}
+		disabled={canFillBottle}
 		onclick={() => {
 			emptyBottles -= 1;
 			filledBottles += 1;
