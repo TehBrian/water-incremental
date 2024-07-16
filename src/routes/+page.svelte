@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import lz from 'lz-string';
 
 	const version = 2;
 
@@ -7,6 +8,7 @@
 		version: number;
 		hasBoughtBottle: boolean;
 		hasFilledBottle: boolean;
+		wasBoughtOut: boolean;
 		hasSoldBottle: boolean;
 		hasAskedFriend: boolean;
 		money: number;
@@ -21,6 +23,7 @@
 			version: version,
 			hasBoughtBottle,
 			hasFilledBottle,
+			wasBoughtOut,
 			hasSoldBottle,
 			hasAskedFriend,
 			money,
@@ -36,6 +39,7 @@
 			hasFilledBottle,
 			hasBoughtBottle,
 			hasSoldBottle,
+			wasBoughtOut,
 			hasAskedFriend,
 			money,
 			emptyBottles,
@@ -50,6 +54,7 @@
 			version: version,
 			hasBoughtBottle: false,
 			hasFilledBottle: false,
+			wasBoughtOut: false,
 			hasSoldBottle: false,
 			hasAskedFriend: false,
 			money: 5,
@@ -63,20 +68,37 @@
 	const itemKey = 'water-incremental-save';
 
 	function writeSave(): void {
-		localStorage.setItem(itemKey, JSON.stringify(exportSave()));
+		localStorage.setItem(itemKey, lz.compressToBase64(JSON.stringify(exportSave())));
 		console.log('Wrote save to local storage.');
+	}
+
+	function isJson(str: string) {
+		try {
+			return JSON.parse(str) && !!str;
+		} catch (e) {
+			return false;
+		}
 	}
 
 	function readSave(): void {
 		const item = localStorage.getItem(itemKey);
 		if (item !== null) {
-			let save: Save = JSON.parse(item);
-			importSave(save);
-			console.log('Read save from local storage.');
+			if (isJson(item)) {
+				// old save format! kill 'em.
+				console.log('Found old save in local storage.');
+				let save: Save = emptySave();
+				importSave(save);
+				wasBoughtOut = true;
+				money = 25;
+			} else {
+				console.log('Read save from local storage.');
+				let save: Save = JSON.parse(lz.decompressFromBase64(item));
+				importSave(save);
+			}
 		} else {
+			console.log('Found no save in local storage.');
 			let save: Save = emptySave();
 			importSave(save);
-			console.log('Found no save in local storage.');
 		}
 	}
 
@@ -109,6 +131,7 @@
 	let hasFilledBottle = $state(false);
 	let hasSoldBottle = $state(false);
 	let hasAskedFriend = $state(false);
+	let wasBoughtOut = $state(false);
 
 	let money = $state(5);
 	let emptyBottles = $state(0);
@@ -202,6 +225,14 @@
 	<p>
 		This is turning out to be quite the luxurious business. You're basically rolling in cash, now.
 	</p>
+{:else if wasBoughtOut}
+	<p>Good news! Your previous water bottle company was purchased by Nestlé.</p>
+	<p>
+		Although you are young and naive, they definitely, totally did not financially take advantage of
+		you!
+	</p>
+	<p>They generously gave you a whole <em>✨ ~ $25 ~ ✨</em>!</p>
+	<p>Still, the possibility of making even more quick cash appeals to you.</p>
 {:else}
 	<p>Your mom gave you $5 for your birthday.</p>
 	<p>
