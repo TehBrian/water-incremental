@@ -348,7 +348,7 @@
 		told him he has to because she thinks he has too few friends.)
 	</p>
 	<p>He'll sell about 1 bottle per second.</p>
-{:else if wantFriend}
+{:else if wantFriend && brandName}
 	<p>All this purchasing, filling, and selling is growing exhausting.</p>
 	<p>You think you should ask a friend to help with your business.</p>
 	<button
@@ -461,8 +461,8 @@
 
 {#if hiredSalesSpecialist}
 	<p>
-		The Auto-Filler 2000 is filling {fillsPerSecond} empty bottle{sIf1(fillsPerSecond)} per second. It
-		has filled {fillerFilledBottles} so far.
+		The Auto-Filler 2000 Ultra is filling {fillsPerSecond} empty bottle{sIf1(fillsPerSecond)} per second.
+		It has filled {fillerFilledBottles} so far.
 	</p>
 {/if}
 
