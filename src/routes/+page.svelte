@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import lz from 'lz-string';
+	import LoadingScreen from '$lib/LoadingScreen.svelte';
 
 	const version = 2;
 
@@ -169,9 +170,7 @@
 </script>
 
 {#if loading}
-	<div id="loading-screen">
-		<p id="loading-text">Loading! &lt;3</p>
-	</div>
+	<LoadingScreen />
 {/if}
 
 {#if hasAskedFriend}
@@ -228,8 +227,8 @@
 {:else if wasBoughtOut}
 	<p>Good news! Your previous water bottle company was purchased by Nestlé.</p>
 	<p>
-		Although you are young and naive, they definitely, totally did not financially take advantage of
-		you!
+		Although you are young and naive, they definitely, totally did not take advantage of you
+		financially!
 	</p>
 	<p>They generously gave you a whole <em>✨ ~ $25 ~ ✨</em>!</p>
 	<p>Still, the possibility of making even more quick cash appeals to you.</p>
@@ -301,23 +300,3 @@
 		filled bottle{sIf1(soldBottles)}.
 	</p>
 {/if}
-
-<style>
-	#loading-screen {
-		background-color: #1c1b21;
-
-		width: 100%;
-		height: 100%;
-
-		position: absolute;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		left: 0;
-	}
-
-	#loading-text {
-		text-align: center;
-		font-size: 8rem;
-	}
-</style>
