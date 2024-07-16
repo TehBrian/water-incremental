@@ -1,0 +1,500 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import lz from 'lz-string';
+
+	const version = 2;
+
+	type Save = {
+		version: number;
+		hasBoughtBottle: boolean;
+		hasFilledBottle: boolean;
+		wasBoughtOut: boolean;
+		hasSoldBottle: boolean;
+		hasAskedRobert: boolean;
+		money: number;
+		emptyBottles: number;
+		filledBottles: number;
+		soldBottles: number;
+		robertSoldBottles: number;
+		payingRobert: boolean;
+		hiredSalesSpecialist: boolean;
+		specialistSoldBottles: number;
+		fillerFilledBottles: number;
+		purchasedFiller: boolean;
+		brandName: string | null;
+	};
+
+	function exportSave(): Save {
+		return {
+			version: version,
+			hasBoughtBottle,
+			hasFilledBottle,
+			wasBoughtOut,
+			hasSoldBottle,
+			hasAskedRobert,
+			money,
+			emptyBottles,
+			filledBottles,
+			soldBottles,
+			brandName,
+			robertSoldBottles,
+			hiredSalesSpecialist,
+			specialistSoldBottles,
+			purchasedFiller,
+			fillerFilledBottles,
+			payingRobert
+		} satisfies Save;
+	}
+
+	function emptySave() {
+		return {
+			version: version,
+			hasBoughtBottle: false,
+			hasFilledBottle: false,
+			wasBoughtOut: false,
+			hasSoldBottle: false,
+			hasAskedRobert: false,
+			money: 5,
+			emptyBottles: 0,
+			filledBottles: 0,
+			soldBottles: 0,
+			brandName: null,
+			robertSoldBottles: 0,
+			hiredSalesSpecialist: false,
+			specialistSoldBottles: 0,
+			purchasedFiller: false,
+			fillerFilledBottles,
+			payingRobert: false
+		} satisfies Save;
+	}
+
+	function importSave(save: Save) {
+		({
+			hasFilledBottle,
+			hasBoughtBottle,
+			hasSoldBottle,
+			wasBoughtOut,
+			hasAskedRobert,
+			money,
+			emptyBottles,
+			filledBottles,
+			soldBottles,
+			brandName,
+			robertSoldBottles,
+			hiredSalesSpecialist,
+			specialistSoldBottles,
+			fillerFilledBottles,
+			purchasedFiller,
+			payingRobert
+		} = save);
+	}
+
+	const itemKey = 'water-incremental-save';
+
+	function writeSave(): void {
+		localStorage.setItem(itemKey, lz.compressToBase64(JSON.stringify(exportSave())));
+		console.log('Wrote save to local storage.');
+	}
+
+	function isJson(str: string) {
+		try {
+			return JSON.parse(str) && !!str;
+		} catch (e) {
+			return false;
+		}
+	}
+
+	function readSave(): void {
+		const item = localStorage.getItem(itemKey);
+		if (item !== null) {
+			if (isJson(item)) {
+				// old save format! kill 'em.
+				console.log('Found old save in local storage.');
+				let save: Save = emptySave();
+				importSave(save);
+				wasBoughtOut = true;
+				money = 25;
+			} else {
+				console.log('Read save from local storage.');
+				let save: Save = JSON.parse(lz.decompressFromBase64(item));
+				importSave(save);
+			}
+		} else {
+			console.log('Found no save in local storage.');
+			let save: Save = emptySave();
+			importSave(save);
+		}
+	}
+
+	let lastAutoSale: number | null;
+	let lastFill: number | null;
+	function tick(now: number) {
+		if (emptyBottles > 0 && purchasedFiller) {
+			if (!lastFill) lastFill = now;
+			const delta = now - lastFill;
+			if (delta >= 1000 / fillsPerSecond) {
+				emptyBottles -= 1;
+				filledBottles += 1;
+				fillerFilledBottles += 1;
+				if (momDividends) {
+					money -= 0.1;
+				}
+				lastFill = now;
+			}
+		}
+
+		if (filledBottles > 0 && (robertActive || hiredSalesSpecialist)) {
+			if (!lastAutoSale) lastAutoSale = now;
+			const delta = now - lastAutoSale;
+			if (delta >= 1000 / autoSalesPerSecond) {
+				soldBottles += 1;
+				if (hiredSalesSpecialist) {
+					specialistSoldBottles += 1;
+				} else {
+					robertSoldBottles += 1;
+				}
+				filledBottles -= 1;
+				money += soldBottlePrice - autoSkim;
+				lastAutoSale = now;
+			}
+		}
+
+		requestAnimationFrame(tick);
+	}
+
+	onMount(async () => {
+		readSave();
+		setInterval(() => writeSave(), 1000);
+		requestAnimationFrame(tick);
+	});
+
+	let hasBoughtBottle = $state(false);
+	let hasFilledBottle = $state(false);
+	let hasSoldBottle = $state(false);
+	let hasAskedRobert = $state(false);
+	let wasBoughtOut = $state(false);
+	let payingRobert = $state(false);
+	let hiredSalesSpecialist = $state(false);
+	let purchasedFiller = $state(false);
+
+	let money = $state(5);
+	let emptyBottles = $state(0);
+	let filledBottles = $state(0);
+	let soldBottles = $state(0);
+	let robertSoldBottles = $state(0);
+	let specialistSoldBottles = $state(0);
+	let fillerFilledBottles = $state(0);
+
+	let luxuriousBusiness = $derived(soldBottles >= 50);
+	let momDividends = $derived(soldBottles >= 110);
+	let canLabelBottles = $derived(soldBottles >= 170);
+	let wantFriend = $derived(soldBottles >= 245);
+	let canNotFillBottle = $derived(emptyBottles < 1 || (momDividends && money < 0.1));
+	let wantFiller = $derived(specialistSoldBottles >= 160);
+	let bottleSupplierHappy = $derived(fillerFilledBottles >= 420);
+
+	let brandName: string | null = $state(null);
+	let brandNameInput: HTMLInputElement | null = $state(null);
+
+	let emptyBottleCost = $derived(brandName ? 6 : 5);
+	let soldBottlePrice = $derived(brandName ? 0.8 : 0.5);
+
+	let robertBetter = $derived(robertSoldBottles >= 50);
+	let robertGreedy = $derived(robertSoldBottles >= 130);
+	let robertBest = $derived(robertSoldBottles >= 190);
+	let robertRetired = $derived(robertSoldBottles >= 370);
+	let robertActive = $derived(hasAskedRobert && (!robertGreedy || payingRobert) && !robertRetired);
+
+	let autoSalesPerSecond = $derived.by(() => {
+		if (hiredSalesSpecialist) {
+			return 4;
+		}
+		if (robertBest) {
+			return 3;
+		}
+		if (robertBetter) {
+			return 2;
+		}
+		return 1;
+	});
+	let autoSkim = $derived.by(() => {
+		if (hiredSalesSpecialist) {
+			return 0.2;
+		}
+		if (robertGreedy) {
+			return 0.15;
+		}
+		return 0;
+	});
+	let autoIncomePerSecond = $derived(autoSalesPerSecond * (soldBottlePrice - autoSkim));
+
+	let fillsPerSecond = 5;
+
+	function if1(count: number, singular: string, plural: string) {
+		return count == 1 ? singular : plural;
+	}
+
+	function sIf1(count: number) {
+		return if1(count, '', 's');
+	}
+
+	function currency(value: number) {
+		if (value % 1 === 0) {
+			// whole number.
+			return value.toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 });
+		}
+		return value.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+	}
+	let c = currency;
+</script>
+
+{#if bottleSupplierHappy}
+	<p>
+		Your empty bottle supplier informed you that it has been very pleased with your recent influx in
+		demand.
+	</p>
+	<p>As thanks, it's now offering a bulk pack of empty bottles at a discounted rate.</p>
+{:else if purchasedFiller}
+	<p>
+		The Auto-Filler 2000 Ultra whirrs, crackles, and pops for a moment. You wonder whether it'll
+		work.
+	</p>
+	<p>
+		Surely enough, though, it starts blasting mega-loads of water into empty bottles, capping them,
+		and spitting them out the other end. It's quite the sight to behold.
+	</p>
+{:else if wantFiller}
+	<p>
+		The sales side of this operation is going quite well; however, you're still having to manually
+		fill each bottle.
+	</p>
+	<p>
+		You figure it would be a wise investment to purchase the Auto-Filler 2000 Ultra, capable of
+		filling {fillsPerSecond} bottles per second.
+	</p>
+	<button
+		disabled={money < 170}
+		onclick={() => {
+			money -= 170;
+			purchasedFiller = true;
+		}}
+	>
+		Purchase the Auto-Filler 2000 Ultra.
+		<br />
+		Costs $170.
+	</button>
+{:else if hiredSalesSpecialist}
+	<p>This sales specialist seems quite the professional, and they've gotten straight to work.</p>
+{:else if robertRetired}
+	<p>
+		Robert thanks you for the money he's made so far, but he admits that the filled-bottle-selling
+		business is no longer for him.
+	</p>
+	<p>
+		He'd, truthfully, rather be playing video games. Something about a princess and slaying her. You
+		two amicably part ways, and that's that.
+	</p>
+	<p>The only issue is that you still need sales to be made.</p>
+	<p>
+		You think you should look outside of friends. You think to hire a proper sales specialist. It'd
+		be more costly, costing you $0.25 per sale, up from Robert's $0.15; however, on the bright side,
+		they'd be able to sell 4 bottles per second.
+	</p>
+	<button
+		onclick={() => {
+			hiredSalesSpecialist = true;
+		}}
+	>
+		Hire sales specialist.
+	</button>
+{:else if robertBest}
+	<p>
+		Robert has progressed even further in his ability to sell filled bottles, and he's now averaging
+		3 per second.
+	</p>
+{:else if payingRobert}
+	<p>Robert is happy to be paid, and he's back to work.</p>
+	<p>
+		His mom is impressed that he stood up for himself, and your mom is impressed that you're
+		delegating so well.
+	</p>
+	<p>Best of all, cash is flowing in; business is booming. Overall, everyone is happy.</p>
+{:else if robertGreedy}
+	<p>
+		Robert feels that he has poured his heart into the business but isn't being fairly compensated.
+	</p>
+	<p>He says he'll continue working, but for a price: $0.15 for every bottle he sells.</p>
+	<button
+		onclick={() => {
+			payingRobert = true;
+		}}
+	>
+		Pay Robert.
+	</button>
+{:else if robertBetter}
+	<p>Robert is improving in his salesmanship, so he's now able to sell 2 bottles per second.</p>
+{:else if hasAskedRobert}
+	<p>Your friend, Robert, has agreed to help you sell bottles.</p>
+	<p>
+		Better yet, he'll do it for free! He sure is a real one. What a benevolent young man. (His mom
+		told him he has to because she thinks he has too few friends.)
+	</p>
+	<p>He'll sell about 1 bottle per second.</p>
+{:else if wantFriend && brandName}
+	<p>All this purchasing, filling, and selling is growing exhausting.</p>
+	<p>You think you should ask a friend to help with your business.</p>
+	<button
+		onclick={() => {
+			hasAskedRobert = true;
+		}}
+	>
+		Phone a friend.
+	</button>
+{:else if brandName}
+	<p>
+		With your new-found brand name of {brandName}, you've marked up your bottled tap water from
+		$0.50 to $0.80.
+	</p>
+{:else if canLabelBottles}
+	<p>
+		Your water bottles have become so popular amongst the running community that you figure you can
+		purchase (slightly more expensive) labeled bottles with your brand on them.
+	</p>
+	<p>And, of course, mark up the price thanks to brand recognition.</p>
+	<p>What will your brand name be?</p>
+	<input bind:this={brandNameInput} />
+	<button
+		onclick={() => {
+			if (brandNameInput) {
+				brandName = brandNameInput.value;
+			}
+		}}
+	>
+		Let's do it.
+	</button>
+{:else if momDividends}
+	<p>
+		Your mom is proud to have raised a little entrepreneur, but she's worried that you'll run up the
+		water bill.
+	</p>
+	<p>
+		She proposes that you can keep business running if you pay her $0.10 for every bottle you fill.
+	</p>
+{:else if luxuriousBusiness}
+	<p>
+		This is turning out to be quite the luxurious business. You're basically rolling in cash, now.
+	</p>
+{:else if wasBoughtOut}
+	<p>Good news! Your previous water bottle company was purchased by Nestlé.</p>
+	<p>
+		Although you are young and naive, they definitely, totally did not take advantage of you
+		financially!
+	</p>
+	<p>They generously gave you a whole <em>✨ ~ $25 ~ ✨</em>!</p>
+	<p>Still, the possibility of making even more quick cash appeals to you.</p>
+{:else}
+	<p>Your mom gave you $5 for your birthday.</p>
+	<p>
+		You figure you can make some quick cash by selling water bottles filled from the tap to thirsty
+		passersby on the street.
+	</p>
+{/if}
+
+<hr />
+
+<p>You have ${c(money)}.</p>
+<button
+	disabled={money < emptyBottleCost}
+	onclick={() => {
+		money -= emptyBottleCost;
+		emptyBottles += 15;
+		hasBoughtBottle = true;
+	}}
+>
+	Purchase 15-pack of empty{#if brandName}, {brandName}-branded{/if} bottles.
+	<br />
+	Costs ${c(emptyBottleCost)}.
+</button>
+{#if bottleSupplierHappy}
+	<button
+		style="filter: hue-rotate(140deg);"
+		disabled={money < 30}
+		onclick={() => {
+			money -= 30;
+			emptyBottles += 100;
+		}}
+	>
+		Purchase 100-pack of empty{#if brandName}, {brandName}-branded{/if} bottles.
+		<br />
+		Costs $30.
+	</button>
+{/if}
+
+{#if hasBoughtBottle}
+	<p>You have {emptyBottles} empty bottle{sIf1(emptyBottles)}.</p>
+	<button
+		disabled={canNotFillBottle}
+		onclick={() => {
+			emptyBottles -= 1;
+			filledBottles += 1;
+			hasFilledBottle = true;
+			if (momDividends) {
+				money -= 0.1;
+			}
+		}}
+	>
+		Fill bottle with tap water.
+		{#if momDividends}
+			<br />
+			Costs $0.10.
+		{/if}
+	</button>
+{/if}
+
+{#if hiredSalesSpecialist}
+	<p>
+		The Auto-Filler 2000 Ultra is filling {fillsPerSecond} empty bottle{sIf1(fillsPerSecond)} per second.
+		It has filled {fillerFilledBottles} so far.
+	</p>
+{/if}
+
+{#if hasFilledBottle}
+	<p>You have {filledBottles} filled bottle{sIf1(filledBottles)}.</p>
+	<button
+		disabled={filledBottles < 1}
+		onclick={() => {
+			filledBottles -= 1;
+			soldBottles += 1;
+			money += soldBottlePrice;
+			hasSoldBottle = true;
+		}}
+	>
+		Sell bottle to thirsty passerby.
+		<br />
+		Earns ${c(soldBottlePrice)}.
+	</button>
+{/if}
+
+{#if hasSoldBottle}
+	<p>
+		{#if hiredSalesSpecialist}You (and your business partners) have{:else if hasAskedRobert}You (and
+			your friend, Robert) have{:else}You've{/if} sold {soldBottles}
+		filled bottle{sIf1(soldBottles)}.
+	</p>
+{/if}
+
+{#if robertActive}
+	<p>
+		Robert is selling {autoSalesPerSecond} filled bottle{sIf1(autoSalesPerSecond)} per second,
+		{#if robertGreedy}and he's taking $0.15 for every bottle sold,{/if}
+		netting you ${c(autoIncomePerSecond)} per second. He has sold {robertSoldBottles} so far.
+	</p>
+{/if}
+
+{#if hiredSalesSpecialist}
+	<p>
+		The sales specialist is selling {autoSalesPerSecond} filled bottle{sIf1(autoSalesPerSecond)} per
+		second, and they're taking $0.25 for every bottle sold, netting you ${c(autoIncomePerSecond)} per
+		second. They have sold {specialistSoldBottles} so far.
+	</p>
+{/if}
