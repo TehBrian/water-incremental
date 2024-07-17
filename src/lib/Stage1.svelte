@@ -1,129 +1,47 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import lz from 'lz-string';
+	import { type Save } from '$lib/game-save';
 
-	const version = 2;
-
-	type Save = {
-		version: number;
-		hasBoughtBottle: boolean;
-		hasFilledBottle: boolean;
-		wasBoughtOut: boolean;
-		hasSoldBottle: boolean;
-		hasAskedRobert: boolean;
-		money: number;
-		emptyBottles: number;
-		filledBottles: number;
-		soldBottles: number;
-		robertSoldBottles: number;
-		payingRobert: boolean;
-		hiredSalesSpecialist: boolean;
-		specialistSoldBottles: number;
-		fillerFilledBottles: number;
-		purchasedFiller: boolean;
-		brandName: string | null;
-	};
-
-	function exportSave(): Save {
+	export function exportSave(): Partial<Save> {
 		return {
-			version: version,
 			hasBoughtBottle,
 			hasFilledBottle,
 			wasBoughtOut,
 			hasSoldBottle,
-			hasAskedRobert,
+			hasRobert,
 			money,
 			emptyBottles,
 			filledBottles,
 			soldBottles,
 			brandName,
 			robertSoldBottles,
-			hiredSalesSpecialist,
+			hasSpecialist,
 			specialistSoldBottles,
 			purchasedFiller,
 			fillerFilledBottles,
 			payingRobert
-		} satisfies Save;
+		};
 	}
 
-	function emptySave() {
-		return {
-			version: version,
-			hasBoughtBottle: false,
-			hasFilledBottle: false,
-			wasBoughtOut: false,
-			hasSoldBottle: false,
-			hasAskedRobert: false,
-			money: 5,
-			emptyBottles: 0,
-			filledBottles: 0,
-			soldBottles: 0,
-			brandName: null,
-			robertSoldBottles: 0,
-			hiredSalesSpecialist: false,
-			specialistSoldBottles: 0,
-			purchasedFiller: false,
-			fillerFilledBottles,
-			payingRobert: false
-		} satisfies Save;
-	}
-
-	function importSave(save: Save) {
+	export function importSave(save: Save) {
 		({
 			hasFilledBottle,
 			hasBoughtBottle,
 			hasSoldBottle,
 			wasBoughtOut,
-			hasAskedRobert,
+			hasRobert,
 			money,
 			emptyBottles,
 			filledBottles,
 			soldBottles,
 			brandName,
 			robertSoldBottles,
-			hiredSalesSpecialist,
+			hasSpecialist,
 			specialistSoldBottles,
 			fillerFilledBottles,
 			purchasedFiller,
 			payingRobert
 		} = save);
-	}
-
-	const itemKey = 'water-incremental-save';
-
-	function writeSave(): void {
-		localStorage.setItem(itemKey, lz.compressToBase64(JSON.stringify(exportSave())));
-		console.log('Wrote save to local storage.');
-	}
-
-	function isJson(str: string) {
-		try {
-			return JSON.parse(str) && !!str;
-		} catch (e) {
-			return false;
-		}
-	}
-
-	function readSave(): void {
-		const item = localStorage.getItem(itemKey);
-		if (item !== null) {
-			if (isJson(item)) {
-				// old save format! kill 'em.
-				console.log('Found old save in local storage.');
-				let save: Save = emptySave();
-				importSave(save);
-				wasBoughtOut = true;
-				money = 25;
-			} else {
-				console.log('Read save from local storage.');
-				let save: Save = JSON.parse(lz.decompressFromBase64(item));
-				importSave(save);
-			}
-		} else {
-			console.log('Found no save in local storage.');
-			let save: Save = emptySave();
-			importSave(save);
-		}
 	}
 
 	let lastAutoSale: number | null;
@@ -143,12 +61,12 @@
 			}
 		}
 
-		if (filledBottles > 0 && (robertActive || hiredSalesSpecialist)) {
+		if (filledBottles > 0 && (robertActive || hasSpecialist)) {
 			if (!lastAutoSale) lastAutoSale = now;
 			const delta = now - lastAutoSale;
 			if (delta >= 1000 / autoSalesPerSecond) {
 				soldBottles += 1;
-				if (hiredSalesSpecialist) {
+				if (hasSpecialist) {
 					specialistSoldBottles += 1;
 				} else {
 					robertSoldBottles += 1;
@@ -163,18 +81,16 @@
 	}
 
 	onMount(async () => {
-		readSave();
-		setInterval(() => writeSave(), 1000);
 		requestAnimationFrame(tick);
 	});
 
 	let hasBoughtBottle = $state(false);
 	let hasFilledBottle = $state(false);
 	let hasSoldBottle = $state(false);
-	let hasAskedRobert = $state(false);
+	let hasRobert = $state(false);
 	let wasBoughtOut = $state(false);
 	let payingRobert = $state(false);
-	let hiredSalesSpecialist = $state(false);
+	let hasSpecialist = $state(false);
 	let purchasedFiller = $state(false);
 
 	let money = $state(5);
@@ -203,10 +119,10 @@
 	let robertGreedy = $derived(robertSoldBottles >= 130);
 	let robertBest = $derived(robertSoldBottles >= 190);
 	let robertRetired = $derived(robertSoldBottles >= 370);
-	let robertActive = $derived(hasAskedRobert && (!robertGreedy || payingRobert) && !robertRetired);
+	let robertActive = $derived(hasRobert && (!robertGreedy || payingRobert) && !robertRetired);
 
 	let autoSalesPerSecond = $derived.by(() => {
-		if (hiredSalesSpecialist) {
+		if (hasSpecialist) {
 			return 4;
 		}
 		if (robertBest) {
@@ -218,7 +134,7 @@
 		return 1;
 	});
 	let autoSkim = $derived.by(() => {
-		if (hiredSalesSpecialist) {
+		if (hasSpecialist) {
 			return 0.2;
 		}
 		if (robertGreedy) {
@@ -283,7 +199,7 @@
 		<br />
 		Costs $170.
 	</button>
-{:else if hiredSalesSpecialist}
+{:else if hasSpecialist}
 	<p>This sales specialist seems quite the professional, and they've gotten straight to work.</p>
 {:else if robertRetired}
 	<p>
@@ -302,7 +218,7 @@
 	</p>
 	<button
 		onclick={() => {
-			hiredSalesSpecialist = true;
+			hasSpecialist = true;
 		}}
 	>
 		Hire sales specialist.
@@ -333,7 +249,7 @@
 	</button>
 {:else if robertBetter}
 	<p>Robert is improving in his salesmanship, so he's now able to sell 2 bottles per second.</p>
-{:else if hasAskedRobert}
+{:else if hasRobert}
 	<p>Your friend, Robert, has agreed to help you sell bottles.</p>
 	<p>
 		Better yet, he'll do it for free! He sure is a real one. What a benevolent young man. (His mom
@@ -345,7 +261,7 @@
 	<p>You think you should ask a friend to help with your business.</p>
 	<button
 		onclick={() => {
-			hasAskedRobert = true;
+			hasRobert = true;
 		}}
 	>
 		Phone a friend.
@@ -451,7 +367,7 @@
 	</button>
 {/if}
 
-{#if hiredSalesSpecialist}
+{#if hasSpecialist}
 	<p>
 		The Auto-Filler 2000 Ultra is filling {fillsPerSecond} empty bottle{sIf1(fillsPerSecond)} per second.
 		It has filled {fillerFilledBottles} so far.
@@ -477,8 +393,8 @@
 
 {#if hasSoldBottle}
 	<p>
-		{#if hiredSalesSpecialist}You (and your business partners) have{:else if hasAskedRobert}You (and
-			your friend, Robert) have{:else}You've{/if} sold {soldBottles}
+		{#if hasSpecialist}You (and your business partners) have{:else if hasRobert}You (and your
+			friend, Robert) have{:else}You've{/if} sold {soldBottles}
 		filled bottle{sIf1(soldBottles)}.
 	</p>
 {/if}
@@ -491,7 +407,7 @@
 	</p>
 {/if}
 
-{#if hiredSalesSpecialist}
+{#if hasSpecialist}
 	<p>
 		The sales specialist is selling {autoSalesPerSecond} filled bottle{sIf1(autoSalesPerSecond)} per
 		second, and they're taking $0.25 for every bottle sold, netting you ${c(autoIncomePerSecond)} per
