@@ -23,7 +23,7 @@ export type Save = {
   fillerFilledBottles: number;
 };
 
-function emptySave() {
+function emptySave(): Save {
   return {
     version: CURRENT_VERSION,
     wasBoughtOut: false,
@@ -43,6 +43,13 @@ function emptySave() {
     purchasedFiller: false,
     fillerFilledBottles: 0,
   } satisfies Save;
+}
+
+function nestléSave(): Save {
+  let save: Save = emptySave();
+  save.wasBoughtOut = true;
+  save.money = 25;
+  return save;
 }
 
 export let activeSave: Save = emptySave();
@@ -65,21 +72,25 @@ function readSave(): Save {
 
   if (item === null) {
     console.log("Found no save in local storage.");
-    let save: Save = emptySave();
-    return save;
+    return emptySave();
   }
 
   try {
     let save: Save = JSON.parse(lz.decompressFromBase64(item));
     console.log("Read save from local storage.");
+
+    if (save.version !== CURRENT_VERSION) {
+      console.log(
+        `Save version is ${save.version} while current version is ${CURRENT_VERSION}. Having Nestlé buy them out.`,
+      );
+      return nestléSave();
+    }
+
     return save;
   } catch (e) {
     console.error("Failed to read save from local storage.", e);
-    console.log("Assuming old save, and having Nestlé buy them out.");
-    let save: Save = emptySave();
-    save.wasBoughtOut = true;
-    save.money = 25;
-    return save;
+    console.log("Assuming old save. Having Nestlé buy them out.");
+    return nestléSave();
   }
 }
 
