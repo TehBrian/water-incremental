@@ -20,7 +20,7 @@ export type Save = {
   payingRobert: boolean;
   hasSpecialist: boolean;
   specialistSoldBottles: number;
-  purchasedFiller: boolean;
+  hasFiller: boolean;
   fillerFilledBottles: number;
 };
 
@@ -42,7 +42,7 @@ function emptySave(): Save {
     payingRobert: false,
     hasSpecialist: false,
     specialistSoldBottles: 0,
-    purchasedFiller: false,
+    hasFiller: false,
     fillerFilledBottles: 0,
   } satisfies Save;
 }

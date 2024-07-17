@@ -1,133 +1,97 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { type Save } from '$lib/game-save';
+	import { currency as c, sIf1 } from '$lib/format';
 
 	export function exportSave(): Partial<Save> {
 		return {
-			hasBoughtBottle,
-			hasFilledBottle,
 			wasBoughtOut,
-			hasSoldBottle,
-			hasRobert,
 			money,
+			hasBoughtBottle,
 			emptyBottles,
+			hasFilledBottle,
 			filledBottles,
+			hasSoldBottle,
 			soldBottles,
 			helpCount,
 			brandName,
+			hasRobert,
 			robertSoldBottles,
+			payingRobert,
 			hasSpecialist,
 			specialistSoldBottles,
-			purchasedFiller,
-			fillerFilledBottles,
-			payingRobert
+			hasFiller,
+			fillerFilledBottles
 		};
 	}
 
 	export function importSave(save: Save) {
 		({
-			hasFilledBottle,
-			hasBoughtBottle,
-			hasSoldBottle,
 			wasBoughtOut,
-			hasRobert,
 			money,
+			hasBoughtBottle,
 			emptyBottles,
+			hasFilledBottle,
 			filledBottles,
+			hasSoldBottle,
 			soldBottles,
 			helpCount,
 			brandName,
+			hasRobert,
 			robertSoldBottles,
+			payingRobert,
 			hasSpecialist,
 			specialistSoldBottles,
-			fillerFilledBottles,
-			purchasedFiller,
-			payingRobert
+			hasFiller,
+			fillerFilledBottles
 		} = save);
 	}
 
-	let lastAutoSale: number | null;
-	let lastFill: number | null;
-	function tick(now: number) {
-		if (emptyBottles > 0 && purchasedFiller) {
-			if (!lastFill) lastFill = now;
-			const delta = now - lastFill;
-			if (delta >= 1000 / fillsPerSecond) {
-				emptyBottles -= 1;
-				filledBottles += 1;
-				fillerFilledBottles += 1;
-				if (momDividends) {
-					money -= 0.1;
-				}
-				lastFill = now;
-			}
-		}
-
-		if (filledBottles > 0 && (robertActive || hasSpecialist)) {
-			if (!lastAutoSale) lastAutoSale = now;
-			const delta = now - lastAutoSale;
-			if (delta >= 1000 / autoSalesPerSecond) {
-				soldBottles += 1;
-				if (hasSpecialist) {
-					specialistSoldBottles += 1;
-				} else {
-					robertSoldBottles += 1;
-				}
-				filledBottles -= 1;
-				money += soldBottlePrice - autoSkim;
-				lastAutoSale = now;
-			}
-		}
-
-		requestAnimationFrame(tick);
-	}
-
-	onMount(async () => {
-		requestAnimationFrame(tick);
-	});
-
-	let hasBoughtBottle = $state(false);
-	let hasFilledBottle = $state(false);
-	let hasSoldBottle = $state(false);
-	let hasRobert = $state(false);
-	let wasBoughtOut = $state(false);
-	let payingRobert = $state(false);
-	let hasSpecialist = $state(false);
-	let purchasedFiller = $state(false);
-	let helpCount = $state(0);
-
-	let money = $state(5);
-	let emptyBottles = $state(0);
-	let filledBottles = $state(0);
-	let soldBottles = $state(0);
-	let robertSoldBottles = $state(0);
-	let specialistSoldBottles = $state(0);
-	let fillerFilledBottles = $state(0);
-
-	const fillBottleCost = 0.1;
-
-	let luxuriousBusiness = $derived(soldBottles >= 50);
-	let momDividends = $derived(soldBottles >= 110);
-	let canLabelBottles = $derived(soldBottles >= 170);
-	let wantFriend = $derived(soldBottles >= 245);
-	let canNotFillBottle = $derived(emptyBottles < 1 || (momDividends && money < 0.1));
-	let wantFiller = $derived(specialistSoldBottles >= 160);
-	let bottleSupplierHappy = $derived(fillerFilledBottles >= 420);
-	let needsHelp = $derived(momDividends && money < fillBottleCost && filledBottles <= 0);
-
+	let wasBoughtOut: boolean = $state(false);
+	let money: number = $state(0);
+	let hasBoughtBottle: boolean = $state(false);
+	let emptyBottles: number = $state(0);
+	let hasFilledBottle: boolean = $state(false);
+	let filledBottles: number = $state(0);
+	let hasSoldBottle: boolean = $state(false);
+	let soldBottles: number = $state(0);
+	let helpCount: number = $state(0);
 	let brandName: string | null = $state(null);
-	let brandNameInput: HTMLInputElement | null = $state(null);
+	let hasRobert: boolean = $state(false);
+	let robertSoldBottles: number = $state(0);
+	let payingRobert: boolean = $state(false);
+	let hasSpecialist: boolean = $state(false);
+	let specialistSoldBottles: number = $state(0);
+	let hasFiller: boolean = $state(false);
+	let fillerFilledBottles: number = $state(0);
 
-	let emptyBottleCost = $derived(brandName ? 6 : 5);
-	let soldBottlePrice = $derived(brandName ? 0.8 : 0.5);
+	const luxuriousBusiness: boolean = $derived(soldBottles >= 50);
+	const momDividends: boolean = $derived(soldBottles >= 110);
+	const canBrand: boolean = $derived(soldBottles >= 170);
+	const wantFriend: boolean = $derived(soldBottles >= 245);
+	const wantFiller: boolean = $derived(specialistSoldBottles >= 160);
+	const bottleSupplierHappy: boolean = $derived(fillerFilledBottles >= 420);
 
-	let robertBetter = $derived(robertSoldBottles >= 50);
-	let robertGreedy = $derived(robertSoldBottles >= 130);
-	let robertBest = $derived(robertSoldBottles >= 190);
-	let robertRetired = $derived(robertSoldBottles >= 370);
-	let robertActive = $derived(hasRobert && (!robertGreedy || payingRobert) && !robertRetired);
+	const emptyBottleCost: number = $derived(brandName ? 6 : 5);
+	const largeEmptyBottleCost: number = 30;
+    const momDividendsCost: number = 0.1;
+	const fillBottleCost: number = $derived(momDividends ? momDividendsCost : 0);
+	const soldBottlePrice: number = $derived(brandName ? 0.8 : 0.5);
+    const fillerCost: number = 200;
 
-	let autoSalesPerSecond = $derived.by(() => {
+	const needsHelp: boolean = $derived(momDividends && money < fillBottleCost && filledBottles <= 0);
+	const canFillBottle: boolean = $derived(emptyBottles > 0 && money >= fillBottleCost);
+	const canSellBottle: boolean = $derived(filledBottles < 1);
+
+	const robertBetter: boolean = $derived(robertSoldBottles >= 50);
+	const robertGreedy: boolean = $derived(robertSoldBottles >= 130);
+	const robertBest: boolean = $derived(robertSoldBottles >= 190);
+	const robertRetired: boolean = $derived(robertSoldBottles >= 370);
+	const robertActive: boolean = $derived(
+		hasRobert && (!robertGreedy || payingRobert) && !robertRetired
+	);
+
+	const autoSalesPerSecond: number = $derived.by(() => {
 		if (hasSpecialist) {
 			return 4;
 		}
@@ -137,37 +101,69 @@
 		if (robertBetter) {
 			return 2;
 		}
-		return 1;
-	});
-	let autoSkim = $derived.by(() => {
-		if (hasSpecialist) {
-			return 0.2;
-		}
-		if (robertGreedy) {
-			return 0.15;
+		if (hasRobert) {
+			return 1;
 		}
 		return 0;
 	});
-	let autoIncomePerSecond = $derived(autoSalesPerSecond * (soldBottlePrice - autoSkim));
-
-	let fillsPerSecond = 5;
-
-	function if1(count: number, singular: string, plural: string) {
-		return count == 1 ? singular : plural;
-	}
-
-	function sIf1(count: number) {
-		return if1(count, '', 's');
-	}
-
-	function currency(value: number) {
-		if (value % 1 === 0) {
-			// whole number.
-			return value.toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 });
+	const robertGreedySkim: number = 0.15;
+	const specialistSkim: number = 0.2;
+	const autoSkim: number = $derived.by(() => {
+		if (hasSpecialist) {
+			return specialistSkim;
 		}
-		return value.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+		if (robertGreedy) {
+			return robertGreedySkim;
+		}
+		return 0;
+	});
+	const autoIncomePerSecond = $derived(autoSalesPerSecond * (soldBottlePrice - autoSkim));
+
+	const fillsPerSecond = 5;
+
+	let brandNameInput: HTMLInputElement | null = $state(null);
+
+	let lastAutoSale: number | null;
+	let lastFill: number | null;
+	function tick(now: number) {
+		if (filledBottles > 0 && (robertActive || hasSpecialist)) {
+			if (!lastAutoSale) lastAutoSale = now;
+			const delta = now - lastAutoSale;
+			if (delta >= 1000 / autoSalesPerSecond) {
+				filledBottles -= 1;
+
+				soldBottles += 1;
+				if (hasSpecialist) {
+					specialistSoldBottles += 1;
+				} else {
+					robertSoldBottles += 1;
+				}
+				money += soldBottlePrice - autoSkim;
+
+				lastAutoSale = now;
+			}
+		}
+
+		if (emptyBottles > 0 && money >= fillBottleCost && hasFiller) {
+			if (!lastFill) lastFill = now;
+			const delta = now - lastFill;
+			if (delta >= 1000 / fillsPerSecond) {
+				emptyBottles -= 1;
+				money -= fillBottleCost;
+
+				filledBottles += 1;
+				fillerFilledBottles += 1;
+
+				lastFill = now;
+			}
+		}
+
+		requestAnimationFrame(tick);
 	}
-	let c = currency;
+
+	onMount(async () => {
+		requestAnimationFrame(tick);
+	});
 </script>
 
 {#if needsHelp}
@@ -189,7 +185,10 @@
 			your water-bottle-selling stand's counter.
 		</p>
 		<img src="cash.png" alt="infographic titled 'cash explained for kids'" />
-		<p>She notes that you should especially focus on the section about liquidity planning and cash flow.</p>
+		<p>
+			She notes that you should especially focus on the section about liquidity planning and cash
+			flow.
+		</p>
 		<p>If you do, she'll give you a whole $15 this time.</p>
 		<button
 			onclick={() => {
@@ -234,7 +233,7 @@
 		demand.
 	</p>
 	<p>As thanks, it's now offering a bulk pack of empty bottles at a discounted rate.</p>
-{:else if purchasedFiller}
+{:else if hasFiller}
 	<p>
 		The Auto-Filler 2000 Ultra whirrs, crackles, and pops for a moment. You wonder whether it'll
 		work.
@@ -253,15 +252,15 @@
 		filling {fillsPerSecond} bottles per second.
 	</p>
 	<button
-		disabled={money < 170}
+		disabled={money < fillerCost}
 		onclick={() => {
-			money -= 170;
-			purchasedFiller = true;
+			money -= fillerCost;
+			hasFiller = true;
 		}}
 	>
 		Purchase the Auto-Filler 2000 Ultra.
 		<br />
-		Costs $170.
+		Costs ${c(fillerCost)}.
 	</button>
 {:else if hasSpecialist}
 	<p>This sales specialist seems quite the professional, and they've gotten straight to work.</p>
@@ -277,7 +276,7 @@
 	<p>The only issue is that you still need sales to be made.</p>
 	<p>
 		You think you should look outside of friends. You think to hire a proper sales specialist. It'd
-		be more costly, costing you $0.25 per sale, up from Robert's $0.15; however, on the bright side,
+		be more costly, costing you ${c(specialistSkim)} per sale, up from Robert's ${c(robertGreedySkim)}; however, on the bright side,
 		they'd be able to sell 4 bottles per second.
 	</p>
 	<button
@@ -303,7 +302,7 @@
 	<p>
 		Robert feels that he has poured his heart into the business but isn't being fairly compensated.
 	</p>
-	<p>He says he'll continue working, but for a price: $0.15 for every bottle he sells.</p>
+	<p>He says he'll continue working, but for a price: ${c(robertGreedySkim)} for every bottle he sells.</p>
 	<button
 		onclick={() => {
 			payingRobert = true;
@@ -333,9 +332,9 @@
 {:else if brandName}
 	<p>
 		With your new-found brand name of {brandName}, you've marked up your bottled tap water from
-		$0.50 to $0.80.
+		${c(0.5)} to ${c(0.8)}.
 	</p>
-{:else if canLabelBottles}
+{:else if canBrand}
 	<p>
 		Your water bottles have become so popular amongst the running community that you figure you can
 		purchase (slightly more expensive) labeled bottles with your brand on them.
@@ -358,7 +357,7 @@
 		water bill.
 	</p>
 	<p>
-		She proposes that you can keep business running if you pay her $0.10 for every bottle you fill.
+		She proposes that you can keep business running if you pay her ${c(momDividendsCost)} for every bottle you fill.
 	</p>
 {:else if luxuriousBusiness}
 	<p>
@@ -398,33 +397,31 @@
 {#if bottleSupplierHappy}
 	<button
 		style="filter: hue-rotate(140deg);"
-		disabled={money < 30}
+		disabled={money < largeEmptyBottleCost}
 		onclick={() => {
-			money -= 30;
+			money -= largeEmptyBottleCost;
 			emptyBottles += 100;
 		}}
 	>
 		Purchase 100-pack of empty{#if brandName}, {brandName}-branded{/if} bottles.
 		<br />
-		Costs $30.
+		Costs ${c(largeEmptyBottleCost)}.
 	</button>
 {/if}
 
 {#if hasBoughtBottle}
 	<p>You have {emptyBottles} empty bottle{sIf1(emptyBottles)}.</p>
 	<button
-		disabled={canNotFillBottle}
+		disabled={!canFillBottle}
 		onclick={() => {
 			emptyBottles -= 1;
 			filledBottles += 1;
 			hasFilledBottle = true;
-			if (momDividends) {
 				money -= fillBottleCost;
-			}
 		}}
 	>
 		Fill bottle with tap water.
-		{#if momDividends}
+		{#if fillBottleCost}
 			<br />
 			Costs ${c(fillBottleCost)}.
 		{/if}
@@ -441,7 +438,7 @@
 {#if hasFilledBottle}
 	<p>You have {filledBottles} filled bottle{sIf1(filledBottles)}.</p>
 	<button
-		disabled={filledBottles < 1}
+		disabled={!canSellBottle}
 		onclick={() => {
 			filledBottles -= 1;
 			soldBottles += 1;
@@ -466,7 +463,7 @@
 {#if robertActive}
 	<p>
 		Robert is selling {autoSalesPerSecond} filled bottle{sIf1(autoSalesPerSecond)} per second,
-		{#if robertGreedy}and he's taking $0.15 for every bottle sold,{/if}
+		{#if autoSkim}and he's taking ${c(autoSkim)} for every bottle sold,{/if}
 		netting you ${c(autoIncomePerSecond)} per second. He has sold {robertSoldBottles} so far.
 	</p>
 {/if}
@@ -474,8 +471,9 @@
 {#if hasSpecialist}
 	<p>
 		The sales specialist is selling {autoSalesPerSecond} filled bottle{sIf1(autoSalesPerSecond)} per
-		second, and they're taking $0.25 for every bottle sold, netting you ${c(autoIncomePerSecond)} per
-		second. They have sold {specialistSoldBottles} so far.
+		second, and they're taking ${c(autoSkim)} for every bottle sold, netting you ${c(
+			autoIncomePerSecond
+		)} per second. They have sold {specialistSoldBottles} so far.
 	</p>
 {/if}
 
