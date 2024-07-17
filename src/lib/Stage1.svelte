@@ -428,7 +428,7 @@
 	</button>
 {/if}
 
-{#if hasSpecialist}
+{#if hasFiller}
 	<p>
 		The Auto-Filler 2000 Ultra is filling {fillsPerSecond} empty bottle{sIf1(fillsPerSecond)} per second.
 		It has filled {fillerFilledBottles} so far.
