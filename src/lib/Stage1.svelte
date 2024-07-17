@@ -13,6 +13,7 @@
 			emptyBottles,
 			filledBottles,
 			soldBottles,
+			helpCount,
 			brandName,
 			robertSoldBottles,
 			hasSpecialist,
@@ -34,6 +35,7 @@
 			emptyBottles,
 			filledBottles,
 			soldBottles,
+			helpCount,
 			brandName,
 			robertSoldBottles,
 			hasSpecialist,
@@ -92,6 +94,7 @@
 	let payingRobert = $state(false);
 	let hasSpecialist = $state(false);
 	let purchasedFiller = $state(false);
+	let helpCount = $state(0);
 
 	let money = $state(5);
 	let emptyBottles = $state(0);
@@ -101,6 +104,8 @@
 	let specialistSoldBottles = $state(0);
 	let fillerFilledBottles = $state(0);
 
+	const fillBottleCost = 0.1;
+
 	let luxuriousBusiness = $derived(soldBottles >= 50);
 	let momDividends = $derived(soldBottles >= 110);
 	let canLabelBottles = $derived(soldBottles >= 170);
@@ -108,6 +113,7 @@
 	let canNotFillBottle = $derived(emptyBottles < 1 || (momDividends && money < 0.1));
 	let wantFiller = $derived(specialistSoldBottles >= 160);
 	let bottleSupplierHappy = $derived(fillerFilledBottles >= 420);
+	let needsHelp = $derived(momDividends && money < fillBottleCost && filledBottles <= 0);
 
 	let brandName: string | null = $state(null);
 	let brandNameInput: HTMLInputElement | null = $state(null);
@@ -164,7 +170,65 @@
 	let c = currency;
 </script>
 
-{#if bottleSupplierHappy}
+{#if needsHelp}
+	<p>Your mom notices that you've run out of cash.</p>
+
+	{#if helpCount >= 7}
+		<p>She blankly stares for a moment. She hands you another dollar while not saying a thing.</p>
+		<button
+			onclick={() => {
+				money += 1;
+				helpCount += 1;
+			}}
+		>
+			Take the dollar.
+		</button>
+	{:else if helpCount == 6}
+		<p>
+			She sighs and says, "Here. Look at this infographic." She places a freshly-printed paper onto
+			your water-bottle-selling stand's counter.
+		</p>
+		<img src="cash.png" alt="infographic titled 'cash explained for kids'" />
+		<p>She notes that you should especially focus on the section about liquidity planning and cash flow.</p>
+		<p>If you do, she'll give you a whole $15 this time.</p>
+		<button
+			onclick={() => {
+				money += 15;
+				helpCount += 1;
+			}}
+		>
+			Tell her that you've read the infographic and that you're ready to take on the world.
+		</button>
+	{:else}
+		<p>
+			She benevolently offers you one whole dollar, no strings attached, to help you get back on
+			your feet{#if helpCount == 1}, again{:else if helpCount > 1}, <b><em>again</em></b>{/if}.
+		</p>
+
+		{#if helpCount == 5}
+			<p>
+				She <em>knows</em> you're smart—she's always said so, and she <em>knows</em> you're capable of
+				doing great things, which is why she's having such a hard time believing that you keep on overbuying
+				empty bottles if not on purpose.
+			</p>
+		{:else if helpCount == 4}
+			<p>
+				She thinks she ought to sign you up for business classes at the local community college.
+			</p>
+		{:else if helpCount == 3}
+			<p>Despite her unwavering love for you, she's beginning to doubt your entrepreneurship.</p>
+		{/if}
+
+		<button
+			onclick={() => {
+				money += 1;
+				helpCount += 1;
+			}}
+		>
+			Accept help.
+		</button>
+	{/if}
+{:else if bottleSupplierHappy}
 	<p>
 		Your empty bottle supplier informed you that it has been very pleased with your recent influx in
 		demand.
@@ -355,14 +419,14 @@
 			filledBottles += 1;
 			hasFilledBottle = true;
 			if (momDividends) {
-				money -= 0.1;
+				money -= fillBottleCost;
 			}
 		}}
 	>
 		Fill bottle with tap water.
 		{#if momDividends}
 			<br />
-			Costs $0.10.
+			Costs ${c(fillBottleCost)}.
 		{/if}
 	</button>
 {/if}
@@ -414,3 +478,10 @@
 		second. They have sold {specialistSoldBottles} so far.
 	</p>
 {/if}
+
+<style>
+	img {
+		max-width: 100%;
+		margin: 0 auto;
+	}
+</style>

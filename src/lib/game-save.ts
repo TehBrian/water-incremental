@@ -13,6 +13,7 @@ export type Save = {
   filledBottles: number;
   hasSoldBottle: boolean;
   soldBottles: number;
+  helpCount: number;
   brandName: string | null;
   hasRobert: boolean;
   robertSoldBottles: number;
@@ -34,6 +35,7 @@ function emptySave(): Save {
     filledBottles: 0,
     hasSoldBottle: false,
     soldBottles: 0,
+    helpCount: 0,
     brandName: null,
     hasRobert: false,
     robertSoldBottles: 0,
