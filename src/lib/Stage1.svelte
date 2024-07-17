@@ -74,10 +74,11 @@
 
 	const emptyBottleCost: number = $derived(brandName ? 6 : 5);
 	const largeEmptyBottleCost: number = 30;
-    const momDividendsCost: number = 0.1;
+	const momDividendsCost: number = 0.1;
 	const fillBottleCost: number = $derived(momDividends ? momDividendsCost : 0);
 	const soldBottlePrice: number = $derived(brandName ? 0.8 : 0.5);
-    const fillerCost: number = 200;
+	const fillerCost: number = 200;
+	const minEmptyBottlesForFiller: number = 10;
 
 	const needsHelp: boolean = $derived(momDividends && money < fillBottleCost && filledBottles <= 0);
 	const canFillBottle: boolean = $derived(emptyBottles > 0 && money >= fillBottleCost);
@@ -252,7 +253,7 @@
 		filling {fillsPerSecond} bottles per second.
 	</p>
 	<button
-		disabled={money < fillerCost}
+		disabled={money < fillerCost || emptyBottles < minEmptyBottlesForFiller}
 		onclick={() => {
 			money -= fillerCost;
 			hasFiller = true;
@@ -262,6 +263,12 @@
 		<br />
 		Costs ${c(fillerCost)}.
 	</button>
+	{#if emptyBottles < minEmptyBottlesForFiller}
+		<p>
+			You should also have a few empty bottles on hand, around {minEmptyBottlesForFiller} or so, before
+			purchasing the filler.
+		</p>
+	{/if}
 {:else if hasSpecialist}
 	<p>This sales specialist seems quite the professional, and they've gotten straight to work.</p>
 {:else if robertRetired}
@@ -276,8 +283,9 @@
 	<p>The only issue is that you still need sales to be made.</p>
 	<p>
 		You think you should look outside of friends. You think to hire a proper sales specialist. It'd
-		be more costly, costing you ${c(specialistSkim)} per sale, up from Robert's ${c(robertGreedySkim)}; however, on the bright side,
-		they'd be able to sell 4 bottles per second.
+		be more costly, costing you ${c(specialistSkim)} per sale, up from Robert's ${c(
+			robertGreedySkim
+		)}; however, on the bright side, they'd be able to sell 4 bottles per second.
 	</p>
 	<button
 		onclick={() => {
@@ -302,7 +310,9 @@
 	<p>
 		Robert feels that he has poured his heart into the business but isn't being fairly compensated.
 	</p>
-	<p>He says he'll continue working, but for a price: ${c(robertGreedySkim)} for every bottle he sells.</p>
+	<p>
+		He says he'll continue working, but for a price: ${c(robertGreedySkim)} for every bottle he sells.
+	</p>
 	<button
 		onclick={() => {
 			payingRobert = true;
@@ -331,8 +341,9 @@
 	</button>
 {:else if brandName}
 	<p>
-		With your new-found brand name of {brandName}, you've marked up your bottled tap water from
-		${c(0.5)} to ${c(0.8)}.
+		With your new-found brand name of {brandName}, you've marked up your bottled tap water from ${c(
+			0.5
+		)} to ${c(0.8)}.
 	</p>
 {:else if canBrand}
 	<p>
@@ -357,7 +368,8 @@
 		water bill.
 	</p>
 	<p>
-		She proposes that you can keep business running if you pay her ${c(momDividendsCost)} for every bottle you fill.
+		She proposes that you can keep business running if you pay her ${c(momDividendsCost)} for every bottle
+		you fill.
 	</p>
 {:else if luxuriousBusiness}
 	<p>
@@ -417,7 +429,7 @@
 			emptyBottles -= 1;
 			filledBottles += 1;
 			hasFilledBottle = true;
-				money -= fillBottleCost;
+			money -= fillBottleCost;
 		}}
 	>
 		Fill bottle with tap water.
