@@ -50,7 +50,7 @@ function emptySave(): Save {
 function nestléSave(): Save {
   let save: Save = emptySave();
   save.wasBoughtOut = true;
-  save.money = 25;
+  save.money = 40;
   return save;
 }
 
@@ -80,19 +80,38 @@ function readSave(): Save {
   try {
     let save: Save = JSON.parse(lz.decompressFromBase64(item));
     console.log("Read save from local storage.");
-
+    
     if (save.version !== CURRENT_VERSION) {
       console.log(
         `Save version is ${save.version} while current version is ${CURRENT_VERSION}. Having Nestlé buy them out.`,
       );
       return nestléSave();
     }
-
+    
+    compatibilityRewrites(save);
     return save;
   } catch (e) {
     console.error("Failed to read save from local storage.", e);
     console.log("Assuming old save. Having Nestlé buy them out.");
     return nestléSave();
+  }
+}
+
+/**
+ * Compatibility rewrites for older saves (of same version, oops).
+ * Mutates the save object.
+ */
+function compatibilityRewrites(save: Save) {
+  let raw: any = save;
+
+  if (raw.hasAskedRobert !== undefined) {
+    save.hasRobert = raw.hasAskedRobert;
+  }
+  if (raw.hiredSalesSpecialist !== undefined) {
+    save.hasSpecialist = raw.hiredSalesSpecialist;
+  }
+  if (raw.purchasedFiller !== undefined) {
+    save.hasFiller = raw.purchasedFiller;
   }
 }
 
