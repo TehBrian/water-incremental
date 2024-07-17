@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import LoadingScreen from '$lib/LoadingScreen.svelte';
 	import Stage1 from '$lib/Stage1.svelte';
+	import Header from '$lib/Header.svelte';
 	import { activeSave, updateActiveSave, readActiveSave, writeActiveSave } from '$lib/game-save';
 
 	let loading = $state(true);
@@ -24,8 +25,10 @@
 	<LoadingScreen />
 {/if}
 
+<Header />
+
 <div class="stage1">
-<Stage1 bind:this={stage1} />
+	<Stage1 bind:this={stage1} />
 </div>
 
 <svelte:head>
