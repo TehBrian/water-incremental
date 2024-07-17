@@ -81,7 +81,7 @@
 
 	const needsHelp: boolean = $derived(momDividends && money < fillBottleCost && filledBottles <= 0);
 	const canFillBottle: boolean = $derived(emptyBottles > 0 && money >= fillBottleCost);
-	const canSellBottle: boolean = $derived(filledBottles < 1);
+	const canSellBottle: boolean = $derived(filledBottles > 0);
 
 	const robertBetter: boolean = $derived(robertSoldBottles >= 50);
 	const robertGreedy: boolean = $derived(robertSoldBottles >= 130);
