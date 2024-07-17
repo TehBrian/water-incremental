@@ -40,6 +40,10 @@
 			padding: 0.3rem;
 			margin: 0.2rem;
 		}
+
+		input {
+			padding: 0.3rem;
+		}
 	</style>
 </svelte:head>
 
