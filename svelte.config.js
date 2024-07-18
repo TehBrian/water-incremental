@@ -6,6 +6,10 @@ const config = {
   // https://kit.svelte.dev/docs/integrations#preprocessors
   preprocess: vitePreprocess(),
 
+  compilerOptions: {
+    runes: true,
+  },
+
   kit: {
     adapter: adapter({
       pages: "build",
