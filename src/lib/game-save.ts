@@ -1,6 +1,6 @@
 import lz from "lz-string";
 
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 const ITEM_KEY = "water-incremental-save";
 
 export type Save = {

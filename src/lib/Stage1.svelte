@@ -430,11 +430,11 @@
 {:else if wasBoughtOut}
 	<p>Good news! Your previous water bottle company was purchased by Nestlé.</p>
 	<p>
-		Although you are young and naive, they definitely, totally did not take advantage of you
-		financially!
+		Nestlé have received complaints in the past that their company buyout compensation was too low;
+		therefore, they have generously decided to adjust their rate for inflation.
 	</p>
-	<p>They generously gave you a whole <em>✨ ~ $25 ~ ✨</em>!</p>
-	<p>Still, the possibility of making even more quick cash appeals to you.</p>
+	<p>They've magnanimously given you a whole <em>💙 ✨ ~ $40 ~ ✨ 💙</em>!</p>
+	<p>Still, the possibility of making <em>even more</em> quick cash appeals to you.</p>
 {:else}
 	<p>Your mom gave you $5 for your birthday.</p>
 	<p>
