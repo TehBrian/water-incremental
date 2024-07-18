@@ -30,7 +30,7 @@
 	}
 
 	.back {
-		background-color: #1a1a1f;
+		background-color: hsl(250, 10%, 16%);
 		overflow: hidden;
 	}
 
