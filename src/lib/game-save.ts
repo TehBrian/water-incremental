@@ -24,7 +24,7 @@ export type Save = {
   fillerFilledBottles: number;
 };
 
-function emptySave(): Save {
+export function blankSave(): Save {
   return {
     version: CURRENT_VERSION,
     wasBoughtOut: false,
@@ -48,47 +48,40 @@ function emptySave(): Save {
 }
 
 function nestléSave(): Save {
-  let save: Save = emptySave();
+  let save: Save = blankSave();
   save.wasBoughtOut = true;
   save.money = 40;
   return save;
 }
 
-export let activeSave: Save = emptySave();
-
-export function updateActiveSave(data: Partial<Save>): void {
-  activeSave = { ...activeSave, ...data };
+export function updateSave(save: Save, data: Partial<Save>): Save {
+  return { ...save, ...data };
 }
 
-function writeSave(save: Save): void {
-  localStorage.setItem(ITEM_KEY, lz.compressToBase64(JSON.stringify(save)));
+export function encodeSave(save: Save): string {
+  return lz.compressToBase64(JSON.stringify(save));
+}
+
+export function decodeSave(save: string): Save {
+  return JSON.parse(lz.decompressFromBase64(save));
+}
+
+export function writeSaveToLocalStorage(save: Save): void {
+  localStorage.setItem(ITEM_KEY, encodeSave(save));
   console.log("Wrote save to local storage.");
 }
 
-export function writeActiveSave(): void {
-  writeSave(activeSave);
-}
-
-function readSave(): Save {
+export function readSaveFromLocalStorage(): Save {
   const item = localStorage.getItem(ITEM_KEY);
 
   if (item === null) {
     console.log("Found no save in local storage.");
-    return emptySave();
+    return blankSave();
   }
 
   try {
-    let save: Save = JSON.parse(lz.decompressFromBase64(item));
+    let save: Save = decodeSave(item);
     console.log("Read save from local storage.");
-    
-    if (save.version !== CURRENT_VERSION) {
-      console.log(
-        `Save version is ${save.version} while current version is ${CURRENT_VERSION}. Having Nestlé buy them out.`,
-      );
-      return nestléSave();
-    }
-    
-    compatibilityRewrites(save);
     return save;
   } catch (e) {
     console.error("Failed to read save from local storage.", e);
@@ -98,23 +91,29 @@ function readSave(): Save {
 }
 
 /**
- * Compatibility rewrites for older saves (of same version, oops).
- * Mutates the save object.
+ * Clean up save after loading from an external source (local storage, import).
  */
-function compatibilityRewrites(save: Save) {
-  let raw: any = save;
+export function rectifySave(save: Save): Save {
+  save = updateSave(blankSave(), save); // add all missing variables; also, mutating argument BAD!~ >:(
 
-  if (raw.hasAskedRobert !== undefined) {
-    save.hasRobert = raw.hasAskedRobert;
+  if (save.version !== CURRENT_VERSION) {
+    console.log(
+      `Save version is ${save.version} while current version is ${CURRENT_VERSION}. Having Nestlé buy them out.`,
+    );
+    return nestléSave();
   }
-  if (raw.hiredSalesSpecialist !== undefined) {
-    save.hasSpecialist = raw.hiredSalesSpecialist;
-  }
-  if (raw.purchasedFiller !== undefined) {
-    save.hasFiller = raw.purchasedFiller;
-  }
-}
 
-export function readActiveSave(): void {
-  activeSave = readSave();
+  // compatibility for older saves (of same version, oops!)
+  // can be removed next save version.
+  if (save.robertSoldBottles > 0) {
+    save.hasRobert = true;
+  }
+  if (save.specialistSoldBottles > 0) {
+    save.hasSpecialist = true;
+  }
+  if (save.fillerFilledBottles > 0) {
+    save.hasFiller = true;
+  }
+
+  return save;
 }

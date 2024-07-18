@@ -3,18 +3,24 @@
 	import LoadingScreen from '$lib/LoadingScreen.svelte';
 	import Stage1 from '$lib/Stage1.svelte';
 	import Header from '$lib/Header.svelte';
-	import { activeSave, updateActiveSave, readActiveSave, writeActiveSave } from '$lib/game-save';
+	import { rectifySave, type Save, blankSave, readSaveFromLocalStorage, writeSaveToLocalStorage, updateSave } from '$lib/game-save';
 
 	let loading = $state(true);
 	let stage1: Stage1;
 
+    function load(save: Save): void {
+        stage1.importSave(rectifySave(save));
+    }
+
+    function save(): Save {
+        return updateSave(blankSave(), stage1.exportSave());
+    }
+
 	onMount(async () => {
-		readActiveSave();
-		stage1.importSave(activeSave);
+		load(readSaveFromLocalStorage());
 
 		setInterval(() => {
-			updateActiveSave(stage1.exportSave());
-			writeActiveSave();
+			writeSaveToLocalStorage(save());
 		}, 1000);
 
 		loading = false;
