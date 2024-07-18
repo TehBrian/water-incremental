@@ -12,12 +12,13 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@sveltejs/adapter-static": "^3.0.2",
+    "svelte": "^5.0.0-next.191",
     "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/adapter-static": "^3.0.2",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "typescript": "^5.0.0",
+    "sass": "^1.77.8",
     "vite": "^5.0.3",
-    "svelte": "^5.0.0-next.191",
     "lz-string": "^1.5.0"
   },
   "devDependencies": {

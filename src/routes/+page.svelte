@@ -44,7 +44,7 @@
 	<Stage1 bind:this={stage1} />
 </div>
 
-<style>
+<style lang="scss">
 	:global(html) {
 		background-color: hsl(250, 10%, 12%);
 		color: #fff;
