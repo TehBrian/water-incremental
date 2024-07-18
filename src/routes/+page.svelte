@@ -31,7 +31,7 @@
 	<LoadingScreen />
 {/if}
 
-<Header />
+<Header {load} {save} />
 
 <div class="stage1">
 	<Stage1 bind:this={stage1} />
