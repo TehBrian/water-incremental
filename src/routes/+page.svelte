@@ -93,6 +93,12 @@
 				border-color: hsl(250, 10%, 24%);
 			}
 		}
+
+        hr {
+			border: 0.1rem solid;
+			border-radius: 0.2rem;
+            border-color: hsl(250, 10%, 36%) hsl(250, 10%, 24%) hsl(250, 10%, 24%);
+        }
 	</style>
 </svelte:head>
 
