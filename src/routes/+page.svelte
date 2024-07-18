@@ -50,12 +50,12 @@
 
 			touch-action: manipulation;
 
-			border-radius: 0.2rem;
 			border: 0.1rem solid;
+			border-radius: 0.2rem;
 
 			background-color: hsl(250, 10%, 20%);
 			border-color: hsl(250, 10%, 40%);
-			color: #fff;
+			color: hsl(250, 10%, 100%);
 
 			&:hover {
 				background-color: hsl(250, 10%, 36%);
@@ -70,6 +70,7 @@
 			&:disabled {
 				background-color: hsl(250, 10%, 16%);
 				border-color: hsl(250, 10%, 24%);
+                color: hsl(250, 5%, 50%);
 			}
 		}
 
@@ -77,8 +78,8 @@
 			padding: 0.3rem;
 			margin: 0.2rem;
 
-			border-radius: 0.2rem;
 			border: 0.1rem solid;
+			border-radius: 0.2rem;
 
 			background-color: hsl(250, 10%, 16%);
 			border-color: hsl(250, 10%, 40%);
