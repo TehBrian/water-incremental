@@ -35,12 +35,14 @@
 	}
 
 	.container {
-		max-width: 50rem;
 		margin: 0 auto;
 		padding: 0.5rem 1rem;
+		max-width: 50rem;
+		height: 3rem;
 	}
 
 	.flex {
+		height: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
