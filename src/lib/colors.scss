@@ -1,0 +1,11 @@
+@function v($v) {
+  @return hsv($v: $v);
+}
+
+@function sv($s, $v) {
+  @return hsv($s: $s, $v: $v);
+}
+
+@function hsv($h: 250, $s: 10%, $v: 10%) {
+  @return hsl($h, $s, $v);
+}

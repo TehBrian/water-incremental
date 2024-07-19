@@ -45,8 +45,10 @@
 </div>
 
 <style lang="scss">
+    @use '$lib/colors.scss' as *;
+
 	:global(html) {
-		background-color: hsl(250, 10%, 12%);
+		background-color: v(12%);
 		color: #fff;
 	}
 
@@ -59,24 +61,24 @@
 		border: 0.1rem solid;
 		border-radius: 0.2rem;
 
-		background-color: hsl(250, 10%, 20%);
-		border-color: hsl(250, 10%, 40%);
-		color: hsl(250, 10%, 100%);
+		background-color: v(20%);
+		border-color: v(40%);
+		color: v(100%);
 
 		&:hover {
-			background-color: hsl(250, 10%, 36%);
-			border-color: hsl(250, 10%, 72%);
+			background-color: v(36%);
+			border-color: v(72%);
 		}
 
 		&:active {
-			background-color: hsl(250, 10%, 42%);
-			border-color: hsl(250, 10%, 86%);
+			background-color: v(42%);
+			border-color: v(86%);
 		}
 
 		&:disabled {
-			background-color: hsl(250, 10%, 16%);
-			border-color: hsl(250, 10%, 24%);
-			color: hsl(250, 5%, 50%);
+			background-color: v(16%);
+			border-color: v(24%);
+			color: sv(5%, 50%);
 		}
 	}
 
@@ -87,23 +89,23 @@
 		border: 0.1rem solid;
 		border-radius: 0.2rem;
 
-		background-color: hsl(250, 10%, 16%);
-		border-color: hsl(250, 10%, 40%);
+		background-color: v(16%);
+		border-color: v(40%);
 		color: #fff;
 
 		&:hover {
-			border-color: hsl(250, 10%, 52%);
+			border-color: v(52%);
 		}
 
 		&:disabled {
-			border-color: hsl(250, 10%, 24%);
+			border-color: v(24%);
 		}
 	}
 
 	:global(hr) {
 		border: 0.1rem solid;
 		border-radius: 0.2rem;
-		border-color: hsl(250, 10%, 36%) hsl(250, 10%, 24%) hsl(250, 10%, 24%);
+		border-color: v(36%) v(24%) v(24%);
 	}
 
 	div {

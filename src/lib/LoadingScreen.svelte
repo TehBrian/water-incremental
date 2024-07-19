@@ -2,9 +2,11 @@
 	<p>Loading! &lt;3</p>
 </div>
 
-<style>
+<style lang="scss">
+    @use '$lib/colors.scss' as *;
+    
 	div {
-		background-color: #1c1b21;
+		background-color: v(12%);
 
 		width: 100%;
 		height: 100%;

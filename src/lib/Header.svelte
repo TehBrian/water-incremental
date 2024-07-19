@@ -54,7 +54,9 @@
 	</div>
 </div>
 
-<style>
+<style lang="scss">
+    @use '$lib/colors.scss' as *;
+
 	img {
 		margin-bottom: 0.4rem;
 		margin-right: 0.7rem;
@@ -63,7 +65,7 @@
 	}
 
 	.back {
-		background-color: hsl(250, 10%, 16%);
+		background-color: v(16%);
 		overflow: hidden;
 	}
 
