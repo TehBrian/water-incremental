@@ -20,6 +20,7 @@
 			let save: Save = decodeSave(input);
 			console.log('Read save from input.');
 			load(save);
+            return;
 		} catch (e) {
 			console.error('Failed to read save from input.', e);
 			console.log('Assuming misformatted save.');
