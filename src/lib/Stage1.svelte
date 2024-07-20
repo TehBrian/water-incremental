@@ -165,6 +165,16 @@
 	onMount(async () => {
 		requestAnimationFrame(tick);
 	});
+
+	let newShit: boolean = $state(false);
+	let newShitTimeout: number | null = $state(null);
+
+	function moreShit(_node: HTMLButtonElement, options: { delay: number } = { delay: 2 }) {
+		newShit = true;
+		newShitTimeout = setTimeout(() => {
+			newShit = false;
+		}, options.delay * 1000);
+	}
 </script>
 
 {#if needsHelp}
@@ -173,6 +183,8 @@
 	{#if helpCount >= 7}
 		<p>She blankly stares for a moment. She hands you another dollar while not saying a thing.</p>
 		<button
+			use:moreShit
+			disabled={newShit}
 			onclick={() => {
 				money += 1;
 				helpCount += 1;
@@ -192,6 +204,8 @@
 		</p>
 		<p>If you do, she'll give you a whole $15 this time.</p>
 		<button
+			use:moreShit
+			disabled={newShit}
 			onclick={() => {
 				money += 15;
 				helpCount += 1;
@@ -220,6 +234,8 @@
 		{/if}
 
 		<button
+			use:moreShit
+			disabled={newShit}
 			onclick={() => {
 				money += 1;
 				helpCount += 1;
@@ -253,7 +269,8 @@
 		filling {fillsPerSecond} bottles per second.
 	</p>
 	<button
-		disabled={money < fillerCost || emptyBottles < minEmptyBottlesForFiller}
+		use:moreShit
+		disabled={newShit || money < fillerCost || emptyBottles < minEmptyBottlesForFiller}
 		onclick={() => {
 			money -= fillerCost;
 			hasFiller = true;
@@ -288,6 +305,8 @@
 		)}; however, on the bright side, they'd be able to sell 4 bottles per second.
 	</p>
 	<button
+		use:moreShit
+		disabled={newShit}
 		onclick={() => {
 			hasSpecialist = true;
 		}}
@@ -314,6 +333,8 @@
 		He says he'll continue working, but for a price: ${c(robertGreedySkim)} for every bottle he sells.
 	</p>
 	<button
+		use:moreShit
+		disabled={newShit}
 		onclick={() => {
 			payingRobert = true;
 		}}
@@ -333,6 +354,8 @@
 	<p>All this purchasing, filling, and selling is growing exhausting.</p>
 	<p>You think you should ask a friend to help with your business.</p>
 	<button
+		use:moreShit
+		disabled={newShit}
 		onclick={() => {
 			hasRobert = true;
 		}}
@@ -354,6 +377,8 @@
 	<p>What will your brand name be?</p>
 	<input bind:this={brandNameInput} />
 	<button
+		use:moreShit
+		disabled={newShit}
 		onclick={() => {
 			if (brandNameInput) {
 				brandName = brandNameInput.value;
