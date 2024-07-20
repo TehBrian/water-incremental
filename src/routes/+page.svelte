@@ -23,6 +23,13 @@
 		return updateSave(blankSave(), stage1.exportSave());
 	}
 
+	if (import.meta.hot) {
+		// reload save from local storage after hot reload in dev.
+		import.meta.hot.on('vite:afterUpdate', () => {
+			load(readSaveFromLocalStorage());
+		});
+	}
+
 	onMount(async () => {
 		load(readSaveFromLocalStorage());
 
@@ -45,7 +52,7 @@
 </div>
 
 <style lang="scss">
-    @use '$lib/colors.scss' as *;
+	@use '$lib/colors.scss' as *;
 
 	:global(html) {
 		background-color: v(12%);
