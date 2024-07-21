@@ -2,11 +2,12 @@
 	import { onMount } from 'svelte';
 	import { type Save } from '$lib/game-save';
 	import { currency as c, sIf1 } from '$lib/format';
+    import Decimal from 'decimal.js';
 
 	export function exportSave(): Partial<Save> {
 		return {
 			wasBoughtOut,
-			money,
+			money: money.toNumber(),
 			hasBoughtBottle,
 			emptyBottles,
 			hasFilledBottle,
@@ -28,7 +29,6 @@
 	export function importSave(save: Save) {
 		({
 			wasBoughtOut,
-			money,
 			hasBoughtBottle,
 			emptyBottles,
 			hasFilledBottle,
@@ -45,10 +45,12 @@
 			hasFiller,
 			fillerFilledBottles
 		} = save);
+
+        money = new Decimal(save.money);
 	}
 
 	let wasBoughtOut: boolean = $state(false);
-	let money: number = $state(0);
+	let money: Decimal = $state(new Decimal(5));
 	let hasBoughtBottle: boolean = $state(false);
 	let emptyBottles: number = $state(0);
 	let hasFilledBottle: boolean = $state(false);
@@ -80,8 +82,8 @@
 	const fillerCost: number = 200;
 	const minEmptyBottlesForFiller: number = 10;
 
-	const needsHelp: boolean = $derived(momDividends && money < fillBottleCost && filledBottles <= 0);
-	const canFillBottle: boolean = $derived(emptyBottles > 0 && money >= fillBottleCost);
+	const needsHelp: boolean = $derived(momDividends && money.lt(fillBottleCost) && filledBottles <= 0);
+	const canFillBottle: boolean = $derived(emptyBottles > 0 && money.gte(fillBottleCost));
 	const canSellBottle: boolean = $derived(filledBottles > 0);
 
 	const robertBetter: boolean = $derived(robertSoldBottles >= 50);
@@ -139,18 +141,18 @@
 				} else {
 					robertSoldBottles += 1;
 				}
-				money += soldBottlePrice - autoSkim;
+				money = money.plus(soldBottlePrice - autoSkim);
 
 				lastAutoSale = now;
 			}
 		}
 
-		if (emptyBottles > 0 && money >= fillBottleCost && hasFiller) {
+		if (emptyBottles > 0 && money.gte(fillBottleCost) && hasFiller) {
 			if (!lastFill) lastFill = now;
 			const delta = now - lastFill;
 			if (delta >= 1000 / fillsPerSecond) {
 				emptyBottles -= 1;
-				money -= fillBottleCost;
+				money = money.minus(fillBottleCost);
 
 				filledBottles += 1;
 				fillerFilledBottles += 1;
@@ -186,7 +188,7 @@
 			use:moreShit
 			disabled={newShit}
 			onclick={() => {
-				money += 1;
+				money = money.plus(1);
 				helpCount += 1;
 			}}
 		>
@@ -207,7 +209,7 @@
 			use:moreShit
 			disabled={newShit}
 			onclick={() => {
-				money += 15;
+				money = money.plus(15);
 				helpCount += 1;
 			}}
 		>
@@ -237,7 +239,7 @@
 			use:moreShit
 			disabled={newShit}
 			onclick={() => {
-				money += 1;
+				money = money.plus(1);
 				helpCount += 1;
 			}}
 		>
@@ -270,9 +272,9 @@
 	</p>
 	<button
 		use:moreShit
-		disabled={newShit || money < fillerCost || emptyBottles < minEmptyBottlesForFiller}
+		disabled={newShit || money.lt(fillerCost) || emptyBottles < minEmptyBottlesForFiller}
 		onclick={() => {
-			money -= fillerCost;
+			money = money.minus(fillerCost);
 			hasFiller = true;
 		}}
 	>
@@ -420,9 +422,9 @@
 
 <p>You have ${c(money)}.</p>
 <button
-	disabled={money < emptyBottleCost}
+	disabled={money.lt(emptyBottleCost)}
 	onclick={() => {
-		money -= emptyBottleCost;
+		money = money.minus(emptyBottleCost);
 		emptyBottles += 15;
 		hasBoughtBottle = true;
 	}}
@@ -434,9 +436,9 @@
 {#if bottleSupplierHappy}
 	<button
 		style="filter: hue-rotate(140deg);"
-		disabled={money < largeEmptyBottleCost}
+		disabled={money.lt(largeEmptyBottleCost)}
 		onclick={() => {
-			money -= largeEmptyBottleCost;
+			money = money.minus(largeEmptyBottleCost);
 			emptyBottles += 100;
 		}}
 	>
@@ -454,7 +456,7 @@
 			emptyBottles -= 1;
 			filledBottles += 1;
 			hasFilledBottle = true;
-			money -= fillBottleCost;
+			money = money.minus(fillBottleCost);
 		}}
 	>
 		Fill bottle with tap water.
@@ -479,7 +481,7 @@
 		onclick={() => {
 			filledBottles -= 1;
 			soldBottles += 1;
-			money += soldBottlePrice;
+			money = money.minus(soldBottlePrice);
 			hasSoldBottle = true;
 		}}
 	>
