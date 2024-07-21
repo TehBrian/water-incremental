@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { type Save } from '$lib/game-save';
 	import { currency as c, sIf1 } from '$lib/format';
-    import Decimal from 'decimal.js';
+	import Decimal from 'decimal.js';
 
 	export function exportSave(): Partial<Save> {
 		return {
@@ -46,7 +46,9 @@
 			fillerFilledBottles
 		} = save);
 
-        money = new Decimal(save.money);
+		money = new Decimal(save.money);
+        lastAutoSale = null;
+        lastFill = null;
 	}
 
 	let wasBoughtOut: boolean = $state(false);
@@ -82,7 +84,9 @@
 	const fillerCost: number = 200;
 	const minEmptyBottlesForFiller: number = 10;
 
-	const needsHelp: boolean = $derived(momDividends && money.lt(fillBottleCost) && filledBottles <= 0);
+	const needsHelp: boolean = $derived(
+		momDividends && money.lt(fillBottleCost) && filledBottles <= 0
+	);
 	const canFillBottle: boolean = $derived(emptyBottles > 0 && money.gte(fillBottleCost));
 	const canSellBottle: boolean = $derived(filledBottles > 0);
 
@@ -126,41 +130,62 @@
 
 	let brandNameInput: HTMLInputElement | null = $state(null);
 
+	let autoSaleInterval: number = $derived(1000 / autoSalesPerSecond);
 	let lastAutoSale: number | null;
+	let fillInterval: number = $derived(1000 / fillsPerSecond);
 	let lastFill: number | null;
+	function tickAutoSale(now: number) {
+		if (filledBottles <= 0) return;
+		if (!robertActive && !hasSpecialist) return;
+
+		if (!lastAutoSale) {
+			lastAutoSale = now;
+			return;
+		}
+
+		const delta = now - lastAutoSale;
+		let elapsed = Math.floor(delta / autoSaleInterval); // intervals elapsed.
+		if (!elapsed) return; // nothing to do. everything will be 0.
+        let sold = Math.min(elapsed, filledBottles);
+        
+		filledBottles -= 1 * sold;
+		soldBottles += 1 * sold;
+		if (hasSpecialist) {
+			specialistSoldBottles += 1 * sold;
+		} else {
+			robertSoldBottles += 1 * sold;
+		}
+		money = money.plus((soldBottlePrice - autoSkim) * sold);
+
+		lastAutoSale += autoSaleInterval * sold;
+	}
+
+	function tickFill(now: number) {
+		if (emptyBottles <= 0) return;
+		if (money.lt(fillBottleCost)) return;
+		if (!hasFiller) return;
+
+		if (!lastFill) {
+			lastFill = now;
+			return;
+		}
+
+		const delta = now - lastFill;
+		let elapsed = Math.floor(delta / fillInterval); // intervals elapsed.
+		if (!elapsed) return; // nothing to do. everything will be 0.
+        let filled = Math.min(elapsed, emptyBottles);
+
+		emptyBottles -= 1 * filled;
+		money = money.minus(fillBottleCost * filled);
+		filledBottles += 1 * filled;
+		fillerFilledBottles += 1 * filled;
+
+		lastFill += fillInterval * filled;
+	}
+
 	function tick(now: number) {
-		if (filledBottles > 0 && (robertActive || hasSpecialist)) {
-			if (!lastAutoSale) lastAutoSale = now;
-			const delta = now - lastAutoSale;
-			if (delta >= 1000 / autoSalesPerSecond) {
-				filledBottles -= 1;
-
-				soldBottles += 1;
-				if (hasSpecialist) {
-					specialistSoldBottles += 1;
-				} else {
-					robertSoldBottles += 1;
-				}
-				money = money.plus(soldBottlePrice - autoSkim);
-
-				lastAutoSale = now;
-			}
-		}
-
-		if (emptyBottles > 0 && money.gte(fillBottleCost) && hasFiller) {
-			if (!lastFill) lastFill = now;
-			const delta = now - lastFill;
-			if (delta >= 1000 / fillsPerSecond) {
-				emptyBottles -= 1;
-				money = money.minus(fillBottleCost);
-
-				filledBottles += 1;
-				fillerFilledBottles += 1;
-
-				lastFill = now;
-			}
-		}
-
+		tickAutoSale(now);
+		tickFill(now);
 		requestAnimationFrame(tick);
 	}
 
