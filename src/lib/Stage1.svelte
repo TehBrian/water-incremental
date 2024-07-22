@@ -46,7 +46,7 @@
 			fillerFilledBottles
 		} = save);
 
-		money = new Decimal(save.money);
+		money = new Decimal(save.money).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
         lastAutoSale = null;
         lastFill = null;
 	}
