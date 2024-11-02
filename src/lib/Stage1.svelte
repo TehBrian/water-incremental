@@ -198,6 +198,9 @@
 
 	function moreShit(_node: HTMLButtonElement, options: { delay: number } = { delay: 2 }) {
 		newShit = true;
+        if (newShitTimeout) {
+            clearTimeout(newShitTimeout);
+        }
 		newShitTimeout = setTimeout(() => {
 			newShit = false;
 		}, options.delay * 1000);
