@@ -135,10 +135,7 @@
 	let fillInterval: number = $derived(1000 / fillsPerSecond);
 	let lastFill: number | null;
 	function tickAutoSale(now: number) {
-		if (filledBottles <= 0) return;
-		if (!robertActive && !hasSpecialist) return;
-
-		if (!lastAutoSale) {
+		if (filledBottles <= 0 || (!robertActive && !hasSpecialist) || !lastAutoSale) {
 			lastAutoSale = now;
 			return;
 		}
@@ -161,11 +158,7 @@
 	}
 
 	function tickFill(now: number) {
-		if (emptyBottles <= 0) return;
-		if (money.value < fillBottleCost) return;
-		if (!hasFiller) return;
-
-		if (!lastFill) {
+		if (emptyBottles <= 0 || money.value < fillBottleCost || !hasFiller || !lastFill) {
 			lastFill = now;
 			return;
 		}
@@ -198,9 +191,9 @@
 
 	function moreShit(_node: HTMLButtonElement, options: { delay: number } = { delay: 2 }) {
 		newShit = true;
-        if (newShitTimeout) {
-            clearTimeout(newShitTimeout);
-        }
+		if (newShitTimeout) {
+			clearTimeout(newShitTimeout);
+		}
 		newShitTimeout = setTimeout(() => {
 			newShit = false;
 		}, options.delay * 1000);
@@ -410,11 +403,11 @@
 		use:moreShit
 		disabled={newShit}
 		onclick={() => {
-            if (brandNameInput) {
-                brandName = brandNameInput.value;
+			if (brandNameInput) {
+				brandName = brandNameInput.value;
 			}
 		}}
-	>   
+	>
 		Let's do it.
 	</button>
 {:else if momDividends}
