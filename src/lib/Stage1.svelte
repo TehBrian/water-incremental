@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { type Save } from '$lib/game-save';
-	import { currency as c, sIf1 } from '$lib/format';
-	import Decimal from 'decimal.js';
+	import { curr as c, sIf1 } from '$lib/format';
+	import currency from 'currency.js';
 
 	export function exportSave(): Partial<Save> {
 		return {
 			wasBoughtOut,
-			money: money.toNumber(),
+			money: money.value,
 			hasBoughtBottle,
 			emptyBottles,
 			hasFilledBottle,
@@ -46,13 +46,13 @@
 			fillerFilledBottles
 		} = save);
 
-		money = new Decimal(save.money).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-        lastAutoSale = null;
-        lastFill = null;
+		money = currency(save.money);
+		lastAutoSale = null;
+		lastFill = null;
 	}
 
 	let wasBoughtOut: boolean = $state(false);
-	let money: Decimal = $state(new Decimal(5));
+	let money: currency = $state(currency(5));
 	let hasBoughtBottle: boolean = $state(false);
 	let emptyBottles: number = $state(0);
 	let hasFilledBottle: boolean = $state(false);
@@ -85,9 +85,9 @@
 	const minEmptyBottlesForFiller: number = 10;
 
 	const needsHelp: boolean = $derived(
-		momDividends && money.lt(fillBottleCost) && filledBottles <= 0
+		momDividends && money.value < fillBottleCost && filledBottles <= 0
 	);
-	const canFillBottle: boolean = $derived(emptyBottles > 0 && money.gte(fillBottleCost));
+	const canFillBottle: boolean = $derived(emptyBottles > 0 && money.value >= fillBottleCost);
 	const canSellBottle: boolean = $derived(filledBottles > 0);
 
 	const robertBetter: boolean = $derived(robertSoldBottles >= 50);
@@ -128,7 +128,7 @@
 
 	const fillsPerSecond = 5;
 
-	let brandNameInput: HTMLInputElement | null = $state(null);
+	let brandNameInput: HTMLInputElement | undefined = $state(undefined);
 
 	let autoSaleInterval: number = $derived(1000 / autoSalesPerSecond);
 	let lastAutoSale: number | null;
@@ -146,8 +146,8 @@
 		const delta = now - lastAutoSale;
 		let elapsed = Math.floor(delta / autoSaleInterval); // intervals elapsed.
 		if (!elapsed) return; // nothing to do. everything will be 0.
-        let sold = Math.min(elapsed, filledBottles);
-        
+		let sold = Math.min(elapsed, filledBottles);
+
 		filledBottles -= 1 * sold;
 		soldBottles += 1 * sold;
 		if (hasSpecialist) {
@@ -155,14 +155,14 @@
 		} else {
 			robertSoldBottles += 1 * sold;
 		}
-		money = money.plus((soldBottlePrice - autoSkim) * sold);
+		money = money.add((soldBottlePrice - autoSkim) * sold);
 
 		lastAutoSale += autoSaleInterval * sold;
 	}
 
 	function tickFill(now: number) {
 		if (emptyBottles <= 0) return;
-		if (money.lt(fillBottleCost)) return;
+		if (money.value < fillBottleCost) return;
 		if (!hasFiller) return;
 
 		if (!lastFill) {
@@ -173,10 +173,10 @@
 		const delta = now - lastFill;
 		let elapsed = Math.floor(delta / fillInterval); // intervals elapsed.
 		if (!elapsed) return; // nothing to do. everything will be 0.
-        let filled = Math.min(elapsed, emptyBottles);
+		let filled = Math.min(elapsed, emptyBottles);
 
 		emptyBottles -= 1 * filled;
-		money = money.minus(fillBottleCost * filled);
+		money = money.subtract(fillBottleCost * filled);
 		filledBottles += 1 * filled;
 		fillerFilledBottles += 1 * filled;
 
@@ -213,7 +213,7 @@
 			use:moreShit
 			disabled={newShit}
 			onclick={() => {
-				money = money.plus(1);
+				money = money.add(1);
 				helpCount += 1;
 			}}
 		>
@@ -234,7 +234,7 @@
 			use:moreShit
 			disabled={newShit}
 			onclick={() => {
-				money = money.plus(15);
+				money = money.add(15);
 				helpCount += 1;
 			}}
 		>
@@ -264,7 +264,7 @@
 			use:moreShit
 			disabled={newShit}
 			onclick={() => {
-				money = money.plus(1);
+				money = money.add(1);
 				helpCount += 1;
 			}}
 		>
@@ -297,9 +297,9 @@
 	</p>
 	<button
 		use:moreShit
-		disabled={newShit || money.lt(fillerCost) || emptyBottles < minEmptyBottlesForFiller}
+		disabled={newShit || money.value < fillerCost || emptyBottles < minEmptyBottlesForFiller}
 		onclick={() => {
-			money = money.minus(fillerCost);
+			money = money.subtract(fillerCost);
 			hasFiller = true;
 		}}
 	>
@@ -407,11 +407,11 @@
 		use:moreShit
 		disabled={newShit}
 		onclick={() => {
-			if (brandNameInput) {
-				brandName = brandNameInput.value;
+            if (brandNameInput) {
+                brandName = brandNameInput.value;
 			}
 		}}
-	>
+	>   
 		Let's do it.
 	</button>
 {:else if momDividends}
@@ -447,9 +447,9 @@
 
 <p>You have ${c(money)}.</p>
 <button
-	disabled={money.lt(emptyBottleCost)}
+	disabled={money.value < emptyBottleCost}
 	onclick={() => {
-		money = money.minus(emptyBottleCost);
+		money = money.subtract(emptyBottleCost);
 		emptyBottles += 15;
 		hasBoughtBottle = true;
 	}}
@@ -461,9 +461,9 @@
 {#if bottleSupplierHappy}
 	<button
 		style="filter: hue-rotate(140deg);"
-		disabled={money.lt(largeEmptyBottleCost)}
+		disabled={money.value < largeEmptyBottleCost}
 		onclick={() => {
-			money = money.minus(largeEmptyBottleCost);
+			money = money.subtract(largeEmptyBottleCost);
 			emptyBottles += 100;
 		}}
 	>
@@ -481,7 +481,7 @@
 			emptyBottles -= 1;
 			filledBottles += 1;
 			hasFilledBottle = true;
-			money = money.minus(fillBottleCost);
+			money = money.subtract(fillBottleCost);
 		}}
 	>
 		Fill bottle with tap water.
@@ -506,7 +506,7 @@
 		onclick={() => {
 			filledBottles -= 1;
 			soldBottles += 1;
-			money = money.minus(soldBottlePrice);
+			money = money.add(soldBottlePrice);
 			hasSoldBottle = true;
 		}}
 	>

@@ -1,4 +1,4 @@
-import Decimal from "decimal.js";
+import currency from "currency.js";
 
 export function if1(count: number, singular: string, plural: string) {
   return count == 1 ? singular : plural;
@@ -8,9 +8,9 @@ export function sIf1(count: number) {
   return if1(count, "", "s");
 }
 
-export function currency(value: number | Decimal) {
-  if (value instanceof Decimal) {
-    value = value.toNumber();
+export function curr(value: number | currency) {
+  if (value instanceof currency) {
+    value = value.value;
   }
   if (value % 1 === 0) {
     // whole number.
