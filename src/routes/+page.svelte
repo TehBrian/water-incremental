@@ -13,7 +13,7 @@
 	} from '$lib/game-save';
 
 	let loading = $state(true);
-	let stage1: Stage1;
+	let stage1: ReturnType<typeof Stage1>;
 
 	function load(save: Save): void {
 		stage1.importSave(rectifySave(save));
